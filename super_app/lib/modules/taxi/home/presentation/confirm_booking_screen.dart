@@ -39,6 +39,14 @@ class ConfirmBookingScreen extends ConsumerWidget {
               ],
             ),
           const SizedBox(height: 16),
+          if (booking.canUseSafeRide) ...[
+            _SafeRideCard(
+              option: booking.safeRideOption!,
+              enabled: booking.safeRide,
+              onChanged: controller.setSafeRide,
+            ),
+            const SizedBox(height: 8),
+          ],
           _OptionRow(
             icon: Icons.payments_outlined,
             label: 'Payment method',
@@ -241,6 +249,100 @@ class _OptionRow extends StatelessWidget {
       subtitle: Text(value),
       trailing: const Icon(Icons.chevron_right_rounded),
       onTap: onTap,
+    );
+  }
+}
+
+
+/// Safe Ride opt-in.
+///
+/// Shown only when the admin has enabled it for the selected vehicle. The extra cost is
+/// stated up front - the rider should never discover the surcharge only on the receipt.
+class _SafeRideCard extends StatelessWidget {
+  final SafeRideOption option;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  const _SafeRideCard({
+    required this.option,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: enabled ? TaxiColors.primary.withValues(alpha: 0.06) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: enabled ? TaxiColors.primary : Colors.black12,
+          width: enabled ? 1.4 : 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: enabled
+                  ? TaxiColors.primary.withValues(alpha: 0.14)
+                  : Colors.black.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.health_and_safety_outlined,
+              size: 20,
+              color: enabled ? TaxiColors.primary : Colors.black54,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Safe Ride',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  option.note.isNotEmpty
+                      ? option.note
+                      : 'Had a drink? Get home safely on our care tariff.',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: Colors.black54,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      '+ ' + TaxiFormatters.currency(option.surcharge),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: TaxiColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Total ' + TaxiFormatters.currency(option.safeRideFare),
+                      style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(value: enabled, onChanged: onChanged),
+        ],
+      ),
     );
   }
 }

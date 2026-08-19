@@ -111,10 +111,44 @@ class BookingController extends Notifier<BookingState> {
   void selectVehicle(VehicleTypeModel vehicle) {
     state = state.copyWith(selectedVehicle: vehicle);
     _recalculateFare();
+    // Availability is per vehicle, so re-check whenever the selection changes.
+    loadSafeRideOptions();
   }
 
   void setPaymentMethod(String method) {
     state = state.copyWith(paymentMethod: method);
+  }
+
+  /// Safe Ride ("I've been drinking"): opt in/out. The dedicated tariff is applied by the
+  /// backend at booking time; this only records the rider's choice and refreshes the fare
+  /// preview so the surcharge is visible before they confirm.
+  void setSafeRide(bool value) {
+    if (value && !state.canUseSafeRide) return;
+    state = state.copyWith(safeRide: value);
+  }
+
+  /// Loads which vehicles offer a Safe Ride for the current route, with both fares.
+  /// Failure is non-fatal — the option simply stays hidden rather than blocking booking.
+  Future<void> loadSafeRideOptions() async {
+    final distance = state.distanceMeters ?? 0;
+    final duration = (state.durationSeconds ?? 0) / 60;
+    if (distance <= 0) return;
+    try {
+      final options = await ref.read(rideRepositoryProvider).fetchSafeRideOptions(
+            distanceMeters: distance,
+            durationMinutes: duration,
+          );
+      final map = {for (final o in options) o.vehicleTypeId: o};
+      // If the chosen vehicle stops offering it, drop the opt-in rather than
+      // letting a stale toggle send safeRide:true and get rejected at booking.
+      final stillValid = state.selectedVehicle != null && map.containsKey(state.selectedVehicle!.id);
+      state = state.copyWith(
+        safeRideOptions: map,
+        safeRide: state.safeRide && stillValid,
+      );
+    } catch (_) {
+      state = state.copyWith(safeRideOptions: const {}, safeRide: false);
+    }
   }
 
   void applyPromoCode(String? code) {
@@ -232,6 +266,7 @@ class BookingController extends Notifier<BookingState> {
             paymentMethod: state.paymentMethod,
             promoCode: state.promoCode,
             scheduledAt: state.scheduledAt,
+            safeRide: state.safeRide,
           );
       search.attachRide(ride);
       state = state.copyWith(
