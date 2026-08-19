@@ -1,0 +1,125 @@
+name: superapp_user
+description: "K9 Super App — food, rides, parcel and rental in one application."
+publish_to: 'none'
+
+version: 1.0.0+4
+
+environment:
+  # Taxi's floor was higher than food's (^3.11.4); the merged app takes the
+  # higher of the two. Local Dart SDK is 3.12.2, which satisfies this.
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # ── State & navigation ────────────────────────────────────────────────
+  # Riverpod 3 is the target. Taxi's 12 StateNotifiers are rewritten as
+  # Notifier/AsyncNotifier during migration — see docs/superapp Ch. 8.
+  flutter_riverpod: ^3.3.2
+  go_router: ^17.3.0
+
+  # ── Networking ────────────────────────────────────────────────────────
+  dio: ^5.10.0
+  connectivity_plus: ^6.1.0        # replaces food's 5s InternetAddress poll
+  socket_io_client: ^3.1.6
+
+  # ── Storage ───────────────────────────────────────────────────────────
+  shared_preferences: ^2.5.5
+  flutter_secure_storage: ^10.3.1
+  hive: ^2.2.3                     # taxi's 5 local boxes
+  hive_flutter: ^1.1.0
+
+  # ── Firebase ──────────────────────────────────────────────────────────
+  firebase_core: ^4.12.1
+  firebase_messaging: ^16.4.3
+  firebase_database: ^12.4.6       # RTDB live order tracking (food)
+  flutter_local_notifications: ^22.2.0
+
+  # ── Location & maps ───────────────────────────────────────────────────
+  google_maps_flutter: ^2.18.0
+  geolocator: ^14.0.3
+  geocoding: ^3.0.0                # review: may be droppable in favour of
+                                   # the Google Geocoding REST path (Ch. 5 §5.5)
+  flutter_polyline_points: ^3.1.0  # review: taxi's decoder may suffice
+
+  # ── Payments ──────────────────────────────────────────────────────────
+  razorpay_flutter: ^1.4.5
+
+  # ── UI ────────────────────────────────────────────────────────────────
+  google_fonts: ^8.2.0
+  flutter_screenutil: ^5.9.3       # food module only — one ScreenUtilInit at root
+  cached_network_image: ^3.4.1
+  smooth_page_indicator: ^1.2.0    # onboarding carousel (taxi)
+  pin_code_fields: ^8.0.1          # otp field (taxi)
+  # Used only by the ride-side shimmer_widgets. Food's skeleton_loading.dart
+  # supersedes it; drop this once those widgets are migrated.
+  shimmer: ^3.0.0
+
+  # ── Media & device ────────────────────────────────────────────────────
+  image_picker: ^1.2.3
+  video_player: ^2.11.1
+  webview_flutter: ^4.10.0
+  audioplayers: ^6.1.0
+  speech_to_text: ^7.4.0
+
+  # ── Platform ──────────────────────────────────────────────────────────
+  permission_handler: ^12.0.3
+  # Taxi pinned ^8.1.2, but food's geolocator ^14.0.3 pulls
+  # geolocator_linux -> package_info_plus ^10. Bumped to satisfy both;
+  # taxi imports it in exactly 1 file, so the migration cost is trivial.
+  package_info_plus: ^10.2.1       # version display + force-update compare
+  url_launcher: ^6.3.2
+  share_plus: ^13.3.0
+  intl: ^0.20.2
+  uuid: ^4.6.0
+  confetti: ^0.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Deleted vs. the two source pubspecs (14 packages, all with zero imports):
+#   food: freezed_annotation, json_annotation, freezed, json_serializable,
+#         build_runner, flutter_launcher_icons (was in `dependencies`)
+#   taxi: flutter_rating_bar, logger, device_info_plus, lottie, flutter_svg,
+#         fl_chart, equatable, shimmer, path_provider (transitive via hive_flutter)
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true 
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/logo.png"
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  # NOTE: `- assets/` wholesale is deliberately avoided — it is why the taxi
+  # app shipped 17 MB of assets. Enumerate directories; see Ch. 17 for the
+  # WebP pass that takes the combined bundle from 29 MB to ~4.4 MB.
+  assets:
+    - assets/
+    - assets/images/
+    # Ride-side vehicle art. These are only a *fallback*: the vehicle list
+    # prefers the image the admin uploads against each vehicle type. They
+    # exist so a vehicle with no configured image still renders something
+    # instead of throwing "Unable to load asset".
+    - assets/images/taxi/
+    - assets/markers/
+    - assets/videos/
+    - assets/audio/
+    - assets/gif/
+
+  fonts:
+    - family: ManropeVariable
+      fonts:
+        - asset: assets/font/Manrope-VariableFont_wght.ttf

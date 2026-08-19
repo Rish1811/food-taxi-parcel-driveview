@@ -1,0 +1,42 @@
+# Node dependencies
+**/node_modules/
+
+# Flutter & Dart build / packages
+**/build/
+**/.dart_tool/
+**/.pub-cache/
+**/.pub/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+
+# Xcode & iOS
+**/Pods/
+**/.symlinks/
+**/Runner.xcworkspace/xcuserdata/
+**/Runner.xcodeproj/xcuserdata/
+
+# Android
+**/.gradle/
+**/local.properties
+
+# Environment variables & secrets
+.env
+*.env
+!.env.example
+
+# IDE & Editor configs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
