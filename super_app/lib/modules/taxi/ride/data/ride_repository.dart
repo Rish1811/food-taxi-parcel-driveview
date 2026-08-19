@@ -1,11 +1,38 @@
 import 'package:superapp_user/modules/taxi/api/taxi_endpoints.dart';
 import 'package:superapp_user/core/network/taxi_api_client.dart';
 import 'package:superapp_user/modules/taxi/ride/data/models/ride_model.dart';
+import 'package:superapp_user/modules/taxi/home/application/booking_state.dart';
 
 class RideRepository {
   final TaxiApiClient api;
 
   RideRepository(this.api);
+
+  /// Vehicles offering a Safe Ride for this trip, with the normal and safe-ride fare.
+  /// Returns an empty list when the option is not configured anywhere for this location.
+  Future<List<SafeRideOption>> fetchSafeRideOptions({
+    required double distanceMeters,
+    required double durationMinutes,
+    String? serviceLocationId,
+    String transportType = 'taxi',
+  }) async {
+    final data = await api.get(
+      ApiConstants.safeRideVehicles,
+      queryParameters: {
+        'distanceMeters': distanceMeters.round(),
+        'durationMinutes': durationMinutes.round(),
+        'transportType': transportType,
+        if (serviceLocationId != null) 'serviceLocationId': serviceLocationId,
+      },
+    );
+    final payload = (data is Map) ? (data['data'] ?? data) : data;
+    final list = (payload is Map ? payload['vehicles'] : null);
+    if (list is! List) return const [];
+    return list
+        .whereType<Map>()
+        .map((e) => SafeRideOption.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
 
   Future<RideModel> createRide({
     required List<double> pickup,
@@ -23,6 +50,9 @@ class RideRepository {
     String? zoneId,
     String? serviceLocationId,
     DateTime? scheduledAt,
+    /// Safe Ride ("I've been drinking"). Only the flag is sent — the tariff is
+    /// resolved server-side from the admin config, never from the client.
+    bool safeRide = false,
   }) async {
     final data = await api.post(ApiConstants.rides, data: {
       'pickup': pickup,
@@ -36,6 +66,7 @@ class RideRepository {
       'vehicleTypeId': vehicleTypeId,
       'paymentMethod': paymentMethod,
       'serviceType': serviceType,
+      if (safeRide) 'safeRide': true,
       if (promoCode != null && promoCode.isNotEmpty) 'promo_code': promoCode,
       ?zoneId: zoneId,
       ?serviceLocationId: serviceLocationId,

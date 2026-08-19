@@ -32,6 +32,12 @@ class BookingState {
   final String? error;
   final RideModel? createdRide;
 
+  /// Safe Ride ("I've been drinking"): the rider opts in and the trip is priced on the
+  /// dedicated per-vehicle tariff the admin configured. [safeRideOptions] is what the
+  /// backend says is available for this trip, keyed by vehicle type id.
+  final bool safeRide;
+  final Map<String, SafeRideOption> safeRideOptions;
+
   const BookingState({
     this.pickup,
     this.drop,
@@ -50,7 +56,16 @@ class BookingState {
     this.isSubmitting = false,
     this.error,
     this.createdRide,
+    this.safeRide = false,
+    this.safeRideOptions = const {},
   });
+
+  /// The safe-ride option for the currently selected vehicle, if any.
+  SafeRideOption? get safeRideOption =>
+      selectedVehicle == null ? null : safeRideOptions[selectedVehicle!.id];
+
+  /// Whether the option can be offered at all for the current selection.
+  bool get canUseSafeRide => safeRideOption != null;
 
   /// Returns the price configured for [vehicleTypeId]. Falls back to any
   /// other configured set-price when this vehicle type has no dedicated
@@ -81,6 +96,8 @@ class BookingState {
     bool? isSubmitting,
     String? error,
     RideModel? createdRide,
+    bool? safeRide,
+    Map<String, SafeRideOption>? safeRideOptions,
     bool clearError = false,
     bool clearScheduledAt = false,
     bool clearPromo = false,
@@ -103,6 +120,40 @@ class BookingState {
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : (error ?? this.error),
       createdRide: createdRide ?? this.createdRide,
+      safeRide: safeRide ?? this.safeRide,
+      safeRideOptions: safeRideOptions ?? this.safeRideOptions,
+    );
+  }
+}
+
+
+/// One vehicle's Safe Ride offer, as returned by /taxi/users/safe-ride/vehicles.
+class SafeRideOption {
+  final String vehicleTypeId;
+  final String name;
+  final double standardFare;
+  final double safeRideFare;
+  final double surcharge;
+  final String note;
+
+  const SafeRideOption({
+    required this.vehicleTypeId,
+    required this.name,
+    required this.standardFare,
+    required this.safeRideFare,
+    required this.surcharge,
+    this.note = '',
+  });
+
+  factory SafeRideOption.fromJson(Map<String, dynamic> json) {
+    double toD(dynamic v) => (v is num) ? v.toDouble() : 0.0;
+    return SafeRideOption(
+      vehicleTypeId: (json['vehicleTypeId'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      standardFare: toD(json['standardFare']),
+      safeRideFare: toD(json['safeRideFare']),
+      surcharge: toD(json['surcharge']),
+      note: (json['note'] ?? '').toString(),
     );
   }
 }
