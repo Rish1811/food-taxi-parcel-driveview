@@ -29,6 +29,8 @@ class ApiConstants {
   static const String intercityPackages = '/taxi/users/intercity-packages';
   static const String goodsTypes = '/taxi/users/goods-types';
   static const String vehicleTypes = '/taxi/users/vehicle-types';
+  /// Vehicles offering a Safe Ride here, with the normal fare and the safe-ride fare.
+  static const String safeRideVehicles = '/taxi/users/safe-ride/vehicles';
   /// Slim marker-art feed (id + icon_types + map_icon) used to draw vehicles
   /// on the map, instead of the ~7MB full catalog.
   static const String vehicleMapIcons = '/taxi/users/vehicle-map-icons';
